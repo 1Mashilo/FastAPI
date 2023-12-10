@@ -1,0 +1,22 @@
+# Ignore virtual environment
+myenv/
+
+# Ignore Python bytecode
+__pycache__/
+
+# Ignore environment variables file
+.env
+
+# Ignore pipenv or poetry lock file
+Pipfile.lock
+
+# Ignore VS Code settings
+.vscode/
+
+# Ignore any other temporary or generated files
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+*.log

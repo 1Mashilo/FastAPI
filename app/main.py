@@ -23,13 +23,16 @@ def get_posts(db: Session = Depends(get_db)):
     """
     Retrieve a list of all posts.
 
+    Args:
+        db (Session): The database session.
+
     Returns:
         dict: A dictionary containing the list of posts.
     """
     posts = db.query(models.Post).all()
     return {"data": posts}
 
-@app.post("/posts", status_code=status.HTTP_201_CREATED)
+@app.post("/posts", response_model=dict, status_code=status.HTTP_201_CREATED)
 def create_post(post: Post, db: Session = Depends(get_db)):
     """
     Create a new post.
@@ -47,7 +50,7 @@ def create_post(post: Post, db: Session = Depends(get_db)):
     db.refresh(db_post)
     return {"data": db_post}
 
-@app.get("/posts/{id}")
+@app.get("/posts/{id}", response_model=dict)
 def get_post(id: int, db: Session = Depends(get_db)):
     """
     Retrieve details of a specific post by ID.
@@ -69,7 +72,7 @@ def get_post(id: int, db: Session = Depends(get_db)):
 
     return {"post_detail": db_post}
 
-@app.delete("/posts/{id}", status_code=status.HTTP_204_NO_CONTENT)
+@app.delete("/posts/{id}", response_model=dict, status_code=status.HTTP_204_NO_CONTENT)
 def delete_post(id: int, db: Session = Depends(get_db)):
     """
     Delete a post by ID.
@@ -79,7 +82,7 @@ def delete_post(id: int, db: Session = Depends(get_db)):
         db (Session): The database session.
 
     Returns:
-        Response: An HTTP response indicating the success of the operation.
+        dict: A dictionary indicating the success of the operation.
     """
     db_post = db.query(models.Post).filter(models.Post.id == id).first()
 
@@ -92,9 +95,9 @@ def delete_post(id: int, db: Session = Depends(get_db)):
     db.delete(db_post)
     db.commit()
 
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+    return {"message": "Post deleted successfully"}
 
-@app.put("/posts/{id}")
+@app.put("/posts/{id}", response_model=dict)
 def update_post(id: int, post: Post, db: Session = Depends(get_db)):
     """
     Update a post by ID.

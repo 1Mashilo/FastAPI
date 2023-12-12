@@ -1,17 +1,12 @@
 from fastapi import FastAPI, HTTPException, Response, status, Depends
-from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from . import models
+from .schema import Post
 from .database import engine, get_db
 
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
-
-class Post(BaseModel):
-    title: str
-    content: str
-    published: bool
 
 @app.get("/")
 def root():

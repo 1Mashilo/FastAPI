@@ -1,28 +1,21 @@
-from fastapi import FastAPI, HTTPException, Response, status
+from fastapi import FastAPI, HTTPException, Response, status, Depends
 from pydantic import BaseModel
 import psycopg2
+from sqlalchemy.orm import Session
 from psycopg2.extras import RealDictCursor
+from . import models
+from .database import engine, SessionLocal
+
+models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-class Post(BaseModel):
-    title: str
-    content: str
-    published: bool = False  
-
-# Database connection setup
-try:
-    conn = psycopg2.connect(
-        host='localhost',
-        database='FastAPI',
-        user='postgres',
-        password='Mashilo@95',
-        cursor_factory=RealDictCursor
-    )
-    cursor = conn.cursor()
-    print("Database connection was successful!")
-except Exception as error:
-    print(f"Error connecting to the database: {error}")
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 @app.get("/")
 def root():
@@ -33,6 +26,10 @@ def root():
         dict: A dictionary containing a welcome message.
     """
     return {"message": "Welcome to my API"}
+
+@app.get("/sqlachemy")
+def test_posts(db: Session = Depends(get_db)):
+    return{"status": "Success"}
 
 @app.get("/posts")
 def get_posts():

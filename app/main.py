@@ -1,54 +1,60 @@
+
+"""
+FastAPI application for managing blog posts.
+"""
+
 from fastapi import FastAPI, HTTPException, Response, status, Depends
 from sqlalchemy.orm import Session
-from . import models
-from .schema import Post
-from .database import engine, get_db
+from fastapi.responses import Response
+from database import engine, get_db
+from models import Base, Post
+from schemas import PostCreate
 
-models.Base.metadata.create_all(bind=engine)
+Base.metadata.create_all(bind=engine)  
 
 app = FastAPI()
 
 @app.get("/")
 def root():
     """
-    Retrieve a welcome message for the root endpoint.
-
-    Returns:
-        dict: A dictionary containing a welcome message.
+    Welcome endpoint.
     """
     return {"message": "Welcome to my API"}
 
 @app.get("/posts")
 def get_posts(db: Session = Depends(get_db)):
     """
-    Retrieve a list of all posts.
+    Retrieve a list of all blog posts.
 
     Args:
         db (Session): The database session.
 
     Returns:
-        dict: A dictionary containing the list of posts.
+        List[Post]: A list of all blog posts.
     """
-    posts = db.query(models.Post).all()
-    return {"data": posts}
+    posts = db.query(Post).all()
+    return posts
 
-@app.post("/posts", response_model=dict, status_code=status.HTTP_201_CREATED)
-def create_post(post: Post, db: Session = Depends(get_db)):
+def sqlalchemy_model_to_dict(model):
+    return {column.name: getattr(model, column.name) for column in model.__table__.columns}
+
+@app.post("/posts")
+def create_post(post: PostCreate, db: Session = Depends(get_db)):
     """
-    Create a new post.
+    Create a new blog post.
 
     Args:
-        post (Post): The data for the new post.
+        post (PostCreate): The data for the new post.
         db (Session): The database session.
 
     Returns:
         dict: A dictionary containing the newly created post.
     """
-    db_post = models.Post(**post.dict())
+    db_post = Post(**post.dict())
     db.add(db_post)
     db.commit()
     db.refresh(db_post)
-    return {"data": db_post}
+    return sqlalchemy_model_to_dict(db_post)
 
 @app.get("/posts/{id}", response_model=dict)
 def get_post(id: int, db: Session = Depends(get_db)):
@@ -62,7 +68,7 @@ def get_post(id: int, db: Session = Depends(get_db)):
     Returns:
         dict: A dictionary containing the details of the specified post.
     """
-    db_post = db.query(models.Post).filter(models.Post.id == id).first()
+    db_post = db.query(Post).filter(Post.id == id).first()
 
     if not db_post:
         raise HTTPException(
@@ -72,7 +78,7 @@ def get_post(id: int, db: Session = Depends(get_db)):
 
     return {"post_detail": db_post}
 
-@app.delete("/posts/{id}", response_model=dict, status_code=status.HTTP_204_NO_CONTENT)
+@app.delete("/posts/{id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_post(id: int, db: Session = Depends(get_db)):
     """
     Delete a post by ID.
@@ -82,9 +88,9 @@ def delete_post(id: int, db: Session = Depends(get_db)):
         db (Session): The database session.
 
     Returns:
-        dict: A dictionary indicating the success of the operation.
+        Response: An HTTP response indicating the success of the operation.
     """
-    db_post = db.query(models.Post).filter(models.Post.id == id).first()
+    db_post = db.query(Post).filter(Post.id == id).first()
 
     if not db_post:
         raise HTTPException(
@@ -95,22 +101,22 @@ def delete_post(id: int, db: Session = Depends(get_db)):
     db.delete(db_post)
     db.commit()
 
-    return {"message": "Post deleted successfully"}
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 @app.put("/posts/{id}", response_model=dict)
-def update_post(id: int, post: Post, db: Session = Depends(get_db)):
+def update_post(id: int, post: PostCreate, db: Session = Depends(get_db)):
     """
     Update a post by ID.
 
     Args:
         id (int): The ID of the post to update.
-        post (Post): The updated data for the post.
+        post (PostCreate): The updated data for the post.
         db (Session): The database session.
 
     Returns:
         dict: A dictionary containing the updated post.
     """
-    db_post = db.query(models.Post).filter(models.Post.id == id).first()
+    db_post = db.query(Post).filter(Post.id == id).first()
 
     if not db_post:
         raise HTTPException(
@@ -124,4 +130,5 @@ def update_post(id: int, post: Post, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(db_post)
 
-    return {"post_updated": db_post}
+    return db_post
+

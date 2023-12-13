@@ -7,11 +7,13 @@ from fastapi import FastAPI, HTTPException, Response, status, Depends
 from sqlalchemy.orm import Session
 from fastapi.responses import Response
 from database import engine, get_db
-from models import Base, Post
-from schemas import PostCreate
+from models import Base, Post, User
+from schemas import PostCreate, UserCreate, UserOut,  PostResponse
+from passlib.hash import bcrypt
+hash_rounds = 12
 
 Base.metadata.create_all(bind=engine)  
-
+hash_rounds = 12
 app = FastAPI()
 
 @app.get("/")
@@ -34,11 +36,7 @@ def get_posts(db: Session = Depends(get_db)):
     """
     posts = db.query(Post).all()
     return posts
-
-def sqlalchemy_model_to_dict(model):
-    return {column.name: getattr(model, column.name) for column in model.__table__.columns}
-
-@app.post("/posts")
+@app.post("/posts", status_code=status.HTTP_201_CREATED, response_model=PostResponse)
 def create_post(post: PostCreate, db: Session = Depends(get_db)):
     """
     Create a new blog post.
@@ -129,6 +127,16 @@ def update_post(id: int, post: PostCreate, db: Session = Depends(get_db)):
 
     db.commit()
     db.refresh(db_post)
+    return sqlalchemy_model_to_dict(db_post)
 
-    return db_post
+@app.post("/user", status_code=status.HTTP_201_CREATED,response_model=UserOut)
+def create_user(user: UserCreate, db: Session = Depends(get_db)):
+    user.hash_password()
+    new_user = User(**user.dict()) 
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return sqlalchemy_model_to_dict(new_user)
 
+def sqlalchemy_model_to_dict(model):
+    return {column.name: getattr(model, column.name) for column in model.__table__.columns}

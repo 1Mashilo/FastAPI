@@ -3,6 +3,8 @@ from sqlalchemy.orm import Session
 from app.models import Base, Post, User
 from app.schemas import PostCreate, UserCreate, UserOut,  PostResponse
 from app.database import engine, get_db
+from app.utils import sqlalchemy_model_to_dict
+from .auth import oauth2
 
 
 router = APIRouter()
@@ -12,13 +14,37 @@ def get_posts(db: Session = Depends(get_db)):
     posts = db.query(Post).all()
     return posts
 
+from fastapi import HTTPException, status, Depends
+
 @router.post("/posts", status_code=status.HTTP_201_CREATED, response_model=PostResponse)
-def create_post(post: PostCreate, db: Session = Depends(get_db)):
-    db_post = Post(**post.dict())
+def create_post(
+    post: PostCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(oauth2.get_current_user)
+):
+    # Ensure that a user is logged in
+    if not current_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="You must be logged in to create a post.",
+        )
+
+    # Validate the PostCreate schema
+    if not post.validate():
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Validation error. Please check your input data.",
+        )
+
+    # Create and add the post to the database
+    db_post = Post(**post.dict(), user_id=current_user.id)
     db.add(db_post)
     db.commit()
     db.refresh(db_post)
+
+    # Return the created post as a dictionary
     return sqlalchemy_model_to_dict(db_post)
+
 
 @router.get("/posts/{id}", response_model=PostResponse)
 def get_post(id: int, db: Session = Depends(get_db)):

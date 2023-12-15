@@ -1,8 +1,11 @@
+
 # schemas.py
+from typing import Optional
 from passlib.hash import bcrypt
 hash_rounds = 12
 from pydantic import BaseModel, EmailStr
 from typing import Dict
+
 class PostBase(BaseModel):
     title: str
     content: str
@@ -33,5 +36,15 @@ class UserOut(BaseModel):
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
+class TokenData(BaseModel):
+    id: Optional[str] = None 
+
+
 
     

@@ -1,24 +1,32 @@
-
 from sqlalchemy.orm import Session
-from fastapi import FastAPI, HTTPException, Response, status, Depends, APIRouter
-from app.models import Base, Post, User 
+from fastapi import HTTPException, status, Depends, APIRouter
+from app.models import Base, User
 from app.database import get_db
-from app.schemas import PostCreate, UserCreate, UserOut, PostResponse
+from app.schemas import UserCreate, UserOut
 from passlib.hash import bcrypt
 from app.utils import sqlalchemy_model_to_dict
+from app.OAuth2 import get_current_user
+from passlib.context import CryptContext
 
 router = APIRouter(
     prefix="/users"
 )
 
+pwd_contract = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=UserOut)
-def create_user(user: UserCreate, db: Session = Depends(get_db)):
+def create_user(
+    user: UserCreate, 
+    db: Session = Depends(get_db), 
+    user_id: int = Depends(get_current_user)
+):
     user.hash_password()
     new_user = User(**user.dict())
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
     return sqlalchemy_model_to_dict(new_user)
+
 
 @router.get("/{id}", response_model=UserOut)
 def get_user(id: int, db: Session = Depends(get_db)):
@@ -32,5 +40,6 @@ def get_user(id: int, db: Session = Depends(get_db)):
 
     return sqlalchemy_model_to_dict(db_user)
 
-
-
+@router.get('/current-user')
+def get_current_user_route(current_user: str = Depends(get_current_user)):
+    return {"current_user": current_user}

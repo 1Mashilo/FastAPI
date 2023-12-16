@@ -16,13 +16,14 @@ def login(
     user_credentials: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):
-    user = db.get(User, user_credentials.username)
+    user = db.query(User).filter(User.email == user_credentials.username).first()
+    
     
     if not user or not verify(user_credentials.password, user.password):
         raise_authentication_error()
 
     access_token = create_access_token(data={"id": user.email})
-    return {"token": access_token}
+    return access_token
 
 
 def get_current_user(token_data: TokenData = Depends(verify_token)):

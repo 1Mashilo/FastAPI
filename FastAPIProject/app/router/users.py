@@ -5,7 +5,7 @@ from app.database import get_db
 from app.schemas import UserCreate, UserOut
 from passlib.hash import bcrypt
 from app.utils import sqlalchemy_model_to_dict
-from app.OAuth2 import get_current_user
+from .auth import get_current_user
 from passlib.context import CryptContext
 
 router = APIRouter(
@@ -18,7 +18,7 @@ pwd_contract = CryptContext(schemes=["bcrypt"], deprecated="auto")
 def create_user(
     user: UserCreate, 
     db: Session = Depends(get_db), 
-    user_id: int = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     user.hash_password()
     new_user = User(**user.dict())
@@ -26,7 +26,6 @@ def create_user(
     db.commit()
     db.refresh(new_user)
     return sqlalchemy_model_to_dict(new_user)
-
 
 @router.get("/{id}", response_model=UserOut)
 def get_user(id: int, db: Session = Depends(get_db)):
@@ -40,6 +39,6 @@ def get_user(id: int, db: Session = Depends(get_db)):
 
     return sqlalchemy_model_to_dict(db_user)
 
-@router.get('/current-user')
-def get_current_user_route(current_user: str = Depends(get_current_user)):
-    return {"current_user": current_user}
+@router.get('/current-user', response_model=UserOut)
+def get_current_user_route(current_user: User = Depends(get_current_user)):
+    return sqlalchemy_model_to_dict(current_user)

@@ -32,7 +32,9 @@ def get_current_user(token: str = Depends(oauth2), db: Session = Depends(get_db)
             detail="Invalid user",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    return verify_token(token, credentials_exception)
+    token = verify_token(token, credentials_exception)
+    user = db.query(User).filter(User.id == token.id).first()
+    return user
 
 def raise_authentication_error():
     raise HTTPException(

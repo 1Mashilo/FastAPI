@@ -26,7 +26,7 @@ def login(
     return access_token
 
 
-def get_current_user(token: str = Depends(oauth2)):
+def get_current_user(token: str = Depends(oauth2), db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid user",

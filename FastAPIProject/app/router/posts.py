@@ -20,23 +20,10 @@ def create_post(
     db: Session = Depends(get_db),
     user_id: int = Depends(get_current_user)
 ):
-    # Ensure that a user is logged in
-    if not current_user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="You must be logged in to create a post.",
-        )
-
-    # Validate the PostCreate schema
-    if not post.validate():
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Validation error. Please check your input data.",
-        )
-
+    
     # Create and add the post to the database
-    print(current_user)
-    db_post = Post(**post.dict(), user_id=current_user.id)
+    print(user_id)
+    db_post = Post(**post.dict())
     db.add(db_post)
     db.commit()
     db.refresh(db_post)
@@ -72,18 +59,10 @@ def delete_post(
             detail=f"Post with id: {id} does not exist"
         )
 
-    # Check if the logged-in user is the owner of the post
-    if db_post.user_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You do not have permission to delete this post"
-        )
-
     db.delete(db_post)
     db.commit()
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
-from fastapi import HTTPException, status, Depends
 
 @router.put("/posts/{id}", response_model=PostResponse)
 def update_post(
@@ -100,21 +79,6 @@ def update_post(
             detail=f"Post with id: {id} does not exist"
         )
 
-    # Ensure that only the owner of the post can update it
-    if db_post.user_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You do not have permission to update this post"
-        )
-
-    # Validate the PostCreate schema
-    if not post.validate():
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Validation error. Please check your input data.",
-        )
-
-    # Update the post with the new data
     for key, value in post.dict().items():
         setattr(db_post, key, value)
 

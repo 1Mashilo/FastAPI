@@ -26,15 +26,13 @@ def login(
     return access_token
 
 
-def get_current_user(token_data: TokenData = Depends(verify_token)):
-    if token_data.id is None:
-        raise HTTPException(
+def get_current_user(token: str = Depends(oauth2)):
+    credentials_exception = HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid user",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    return token_data.id
-
+    return verify_token(token, credentials_exception)
 
 def raise_authentication_error():
     raise HTTPException(

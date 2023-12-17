@@ -13,10 +13,21 @@ class PostBase(BaseModel):
 class PostCreate(PostBase):
     published: bool = True
 
+
+class UserOut(BaseModel):
+    id: int
+    email: EmailStr
+    class Config:
+     arbitrary_types_allowed = True
+
+
 class PostResponse(BaseModel):
     title: str
     content: str
     published: bool = True
+    owner_id: int
+    owner: UserOut
+
     class Config:
      from_attributes = True
 
@@ -26,12 +37,6 @@ class UserCreate(BaseModel):
 
     def hash_password(self):
         self.password = bcrypt.hash(self.password, rounds=hash_rounds)
-
-class UserOut(BaseModel):
-    id: int
-    email: EmailStr
-    class Config:
-     arbitrary_types_allowed = True
 
 class UserLogin(BaseModel):
     email: EmailStr

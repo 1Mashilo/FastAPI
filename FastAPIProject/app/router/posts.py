@@ -1,35 +1,46 @@
 from fastapi import FastAPI, HTTPException, Response, status, Depends, APIRouter
 from sqlalchemy.orm import Session
 from app.models import Base, Post, User
-from app.schemas import PostCreate, UserCreate, UserOut,  PostResponse
+from app.schemas import PostCreate, UserCreate, UserOut, PostResponse
 from app.database import engine, get_db
 from app.utils import sqlalchemy_model_to_dict
 from .auth import oauth2, get_current_user
-
+from typing import Optional, List
 
 router = APIRouter()
 
-@router.get("/posts")
-def get_posts(db: Session = Depends(get_db)):
-    posts = db.query(Post).all()
-    return posts
+@router.get("/posts", response_model=List[PostResponse])
+def get_posts(
+    db: Session = Depends(get_db),
+    limit: int = 10,
+    skip: int = 0,
+    search: Optional[str] = "",
+    category: Optional[str] = "",
+    author: Optional[str] = ""
+):
+    query = db.query(Post).filter(Post.title.contains(search))
+
+    if category:
+        query = query.filter(Post.category == category)
+
+    if author:
+        query = query.filter(Post.author == author)
+
+    posts = query.limit(limit).offset(skip).all()
+    return [sqlalchemy_model_to_dict(post) for post in posts]
+
 
 @router.post("/posts", status_code=status.HTTP_201_CREATED, response_model=PostResponse)
 def create_post(
     post: PostCreate,
     db: Session = Depends(get_db),
-    user_id: int = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
-    
-    # Create and add the post to the database
-    print(user_id)
-    db_post = Post(**post.dict())
+    db_post = Post(**post.dict(), owner_id=current_user.id)
     db.add(db_post)
     db.commit()
     db.refresh(db_post)
     return sqlalchemy_model_to_dict(db_post)
-
-    # Return the created post as a dictionary
 
 @router.get("/posts/{id}", response_model=PostResponse)
 def get_post(id: int, db: Session = Depends(get_db)):
@@ -42,8 +53,6 @@ def get_post(id: int, db: Session = Depends(get_db)):
         )
 
     return sqlalchemy_model_to_dict(db_post)
-
-from fastapi import HTTPException, status, Depends
 
 @router.delete("/posts/{id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_post(
@@ -58,6 +67,9 @@ def delete_post(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Post with id: {id} does not exist"
         )
+
+    if db_post.owner_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to perform requested action")
 
     db.delete(db_post)
     db.commit()
@@ -79,9 +91,13 @@ def update_post(
             detail=f"Post with id: {id} does not exist"
         )
 
+    if db_post.owner_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to perform requested action")
+
     for key, value in post.dict().items():
         setattr(db_post, key, value)
 
     db.commit()
     db.refresh(db_post)
     return sqlalchemy_model_to_dict(db_post)
+

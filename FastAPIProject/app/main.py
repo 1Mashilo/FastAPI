@@ -3,6 +3,7 @@ from app.database import engine
 from app.models import Base
 from app.router import posts, users, auth
 
+
 Base.metadata.create_all(bind=engine)
 
 

@@ -6,6 +6,12 @@ from app.schemas import TokenData, Token
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from passlib.context import CryptContext
 from typing import Optional
+from app.config import Settings
+
+settings = Settings()
+
+ALGORITHM = settings.ALGORITHM
+SECRET_KEY = settings.SECRET_KEY
 
 pwd_contract = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -40,7 +46,14 @@ def hash(password: str):
 def verify(plain_password, hash_password):
     return pwd_contract.verify(plain_password, hash_password)
 
-def sqlalchemy_model_to_dict(model, exclude=None):
-    if exclude is None:
-        exclude = []
-    return {column.name: getattr(model, column.name) for column in model.__table__.columns if column.name not in exclude}
+
+def sqlalchemy_model_to_dict(instance):
+    result = {column.name: getattr(instance, column.name) for column in instance.__table__.columns}
+    
+    # Add logic to count likes
+    if hasattr(instance, 'votes'):
+        result['likes'] = sum(1 for vote in instance.votes if vote.vote_direction == 1)
+    else:
+        result['likes'] = 0
+    
+    return result

@@ -1,9 +1,8 @@
-
-# schemas.py
 from typing import Optional
 from passlib.hash import bcrypt
 hash_rounds = 12
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr,conint
+
 from typing import Dict
 
 class PostBase(BaseModel):
@@ -50,6 +49,6 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     id: Optional[str] = None 
 
-
-
-    
+class VoteSchema(BaseModel): 
+    voted_post_id: int
+    vote_direction: conint(ge=0, le=1) 

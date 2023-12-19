@@ -1,16 +1,18 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
 from urllib.parse import quote
-from app.config import Settings
+from dotenv import  find_dotenv, load_dotenv
+import os
 
-# Instantiate the Settings class
-settings = Settings()
+# Load environment variables from .env file
+load_dotenv()
 
 # Construct the database URL
-quoted_password = quote(settings.DATABASE_PASSWORD, safe="")
+quoted_password = quote(os.getenv("DATABASE_PASSWORD"), safe="")
 SQLALCHEMY_DATABASE_URL = (
-    f"postgresql://{settings.DATABASE_USERNAME}:{quoted_password}@"
-    f"{settings.DATABASE_HOSTNAME}:{settings.DATABASE_PORT}/{settings.DATABASE_NAME}"
+    f"postgresql://{os.getenv('DATABASE_USERNAME')}:{quoted_password}@"
+    f"{os.getenv('DATABASE_HOSTNAME')}:{os.getenv('DATABASE_PORT')}/{os.getenv('DATABASE_NAME')}"
 )
 
 # Create the SQLAlchemy engine

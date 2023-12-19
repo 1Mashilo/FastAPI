@@ -6,7 +6,6 @@ from app.models import User
 from app.schemas import Token, TokenData
 from app.utils import verify, verify_token, create_access_token
 
-
 router = APIRouter(tags=['Authentication'])
 
 oauth2 = OAuth2PasswordBearer(tokenUrl="/login")

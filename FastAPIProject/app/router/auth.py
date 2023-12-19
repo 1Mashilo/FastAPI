@@ -24,16 +24,17 @@ def login(
     access_token = create_access_token(data={"id": user.email})
     return access_token
 
-
 def get_current_user(token: str = Depends(oauth2), db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid user",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    token = verify_token(token, credentials_exception)
-    user = db.query(User).filter(User.id == token.id).first()
+    token_data = verify_token(token, credentials_exception)
+    user = db.query(User).filter(User.email == token_data.id).first()
     return user
+
+
 
 def raise_authentication_error():
     raise HTTPException(

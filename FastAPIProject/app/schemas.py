@@ -17,15 +17,16 @@ class UserOut(BaseModel):
     id: int
     email: EmailStr
     class Config:
-     arbitrary_types_allowed = True
-
+        from_attributes = True 
 
 class PostResponse(BaseModel):
+    id: int
     title: str
     content: str
-    published: bool = True
+    published: bool
     owner_id: int
-    owner: UserOut
+    owner: Optional[UserOut]
+    likes: int  
 
     class Config:
      from_attributes = True

@@ -27,7 +27,18 @@ def get_posts(
         query = query.filter(Post.author == author)
 
     posts = query.limit(limit).offset(skip).all()
-    return [sqlalchemy_model_to_dict(post) for post in posts]
+      # Convert SQLAlchemy models to Pydantic models
+    response_posts = []
+    for post in posts:
+        owner_pydantic = UserOut.from_orm(post.owner)
+        response_post = PostResponse(
+            **sqlalchemy_model_to_dict(post),
+            owner=owner_pydantic
+        )
+        response_posts.append(response_post)
+
+    return response_posts
+    
 
 
 @router.post("/posts", status_code=status.HTTP_201_CREATED, response_model=PostResponse)
@@ -40,7 +51,18 @@ def create_post(
     db.add(db_post)
     db.commit()
     db.refresh(db_post)
-    return sqlalchemy_model_to_dict(db_post)
+
+    # Convert SQLAlchemy model instance to Pydantic model
+    owner_pydantic = UserOut.from_orm(current_user)
+
+    # Populate the owner field in the response
+    response_post = PostResponse(
+        **sqlalchemy_model_to_dict(db_post),
+        owner=owner_pydantic
+    )
+
+    return response_post
+
 
 @router.get("/posts/{id}", response_model=PostResponse)
 def get_post(id: int, db: Session = Depends(get_db)):
@@ -99,5 +121,10 @@ def update_post(
 
     db.commit()
     db.refresh(db_post)
-    return sqlalchemy_model_to_dict(db_post)
+    owner_pydantic = UserOut.from_orm(db_post.owner)
+    response_post = PostResponse(
+        **sqlalchemy_model_to_dict(db_post),
+        owner=owner_pydantic
+    )
 
+    return response_post

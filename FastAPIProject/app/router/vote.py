@@ -24,7 +24,7 @@ def cast_vote(vote: VoteSchema, db: Session = Depends(get_db), current_user: int
 
     # Your voting logic goes here
     # For example, assuming you have a Vote model defined in your database models:
-    new_vote = Vote(post_id=vote.voted_post_id, dir=vote.vote_direction, user_id=current_user.id)
+    new_vote = Vote(post_id=vote.voted_post_id, vote_direction=vote.vote_direction, user_id=current_user.id)
     db.add(new_vote)
     db.commit()
     db.refresh(new_vote)

@@ -33,7 +33,6 @@ class User(Base):
 
     votes = relationship("Vote", back_populates="user")
 
-
 class Vote(Base):
     __tablename__ = "post_votes"
 
@@ -42,5 +41,10 @@ class Vote(Base):
     post_id = Column(Integer, ForeignKey("posts.id", ondelete="CASCADE"), nullable=False)
 
     user = relationship("User", back_populates="votes")
-
     post = relationship("Post", back_populates="votes")
+
+    
+    vote_direction = Column(Integer, nullable=False)
+
+    def __repr__(self):
+        return f"Vote(id={self.id}, user_id={self.user_id}, post_id={self.post_id}, vote_direction={self.vote_direction})"

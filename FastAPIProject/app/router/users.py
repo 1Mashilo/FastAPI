@@ -18,7 +18,7 @@ pwd_contract = CryptContext(schemes=["bcrypt"], deprecated="auto")
 def create_user(
     user: UserCreate, 
     db: Session = Depends(get_db), 
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_db)
 ):
     user.hash_password()
     new_user = User(**user.dict())

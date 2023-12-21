@@ -8,7 +8,8 @@ from .auth import get_current_user
 from app.utils import sqlalchemy_model_to_dict
 
 router = APIRouter(
-    prefix="/users"
+    prefix="/users",
+    tags=['users']
 )
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")

@@ -6,10 +6,9 @@ from app.schemas import PostCreate, PostResponse
 from app.database import get_db
 from .auth import get_current_user
 
-router = APIRouter()
- 
+router = APIRouter(prefix="/posts", tags=['posts'])
 
-@router.get("/posts", response_model=List[PostResponse])
+@router.get("/", response_model=List[PostResponse])
 def get_posts(
     db: Session = Depends(get_db),
     limit: int = 10,
@@ -32,7 +31,7 @@ def get_posts(
     return posts
 
 
-@router.post("/posts", status_code=status.HTTP_201_CREATED, response_model=PostResponse)
+@router.post("/", status_code=status.HTTP_201_CREATED, response_model=PostResponse)
 def create_post(
     post: PostCreate,
     db: Session = Depends(get_db),
@@ -47,7 +46,7 @@ def create_post(
     return db_post
 
 
-@router.get("/posts/{id}", response_model=PostResponse)
+@router.get("/{id}", response_model=PostResponse)
 def get_post(id: int, db: Session = Depends(get_db)):
     """Endpoint to retrieve a specific post by ID."""
     db_post = db.query(Post).filter(Post.id == id).first()
@@ -58,7 +57,7 @@ def get_post(id: int, db: Session = Depends(get_db)):
     return db_post
 
 
-@router.delete("/posts/{id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_post(
     id: int,
     db: Session = Depends(get_db),
@@ -79,7 +78,7 @@ def delete_post(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@router.put("/posts/{id}", response_model=PostResponse)
+@router.put("/{id}", response_model=PostResponse)
 def update_post(
     id: int,
     post: PostCreate,

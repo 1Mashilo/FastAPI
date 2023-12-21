@@ -1,8 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
 from urllib.parse import quote
-from dotenv import  find_dotenv, load_dotenv
+from dotenv import load_dotenv
 import os
 
 # Load environment variables from .env file
@@ -21,8 +20,10 @@ engine = create_engine(SQLALCHEMY_DATABASE_URL)
 # Create the session factory
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+
 # Dependency to get the database session
 def get_db():
+    """Get a database session."""
     db = SessionLocal()
     try:
         yield db

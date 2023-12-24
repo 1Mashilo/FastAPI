@@ -2,9 +2,10 @@ from typing import Optional, List
 from fastapi import HTTPException, Response, status, Depends, APIRouter
 from sqlalchemy.orm import Session
 from app.models import Post, User
-from app.schemas import PostCreate, PostResponse
+from app.schemas import PostCreate, PostResponse, UserOut
 from app.database import get_db
 from .auth import get_current_user
+from app.utils import sqlalchemy_model_to_dict
 
 router = APIRouter(prefix="/posts", tags=['posts'])
 
@@ -18,6 +19,7 @@ def get_posts(
     author: Optional[str] = ""
 ):
     """Endpoint to retrieve a list of posts."""
+ 
     query = db.query(Post).filter(Post.title.contains(search))
 
     if category:
@@ -27,9 +29,18 @@ def get_posts(
         query = query.filter(Post.author == author)
 
     posts = query.limit(limit).offset(skip).all()
+      # Convert SQLAlchemy models to Pydantic models
+    response_posts = []
+    for post in posts:
+        owner_pydantic = UserOut.from_orm(post.owner)
+        response_post = PostResponse(
+            **sqlalchemy_model_to_dict(post),
+            owner=owner_pydantic
+        )
+        response_posts.append(response_post)
 
-    return posts
-
+    return response_posts
+    
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=PostResponse)
 def create_post(

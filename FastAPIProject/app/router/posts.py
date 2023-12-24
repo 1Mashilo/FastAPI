@@ -54,7 +54,18 @@ def create_post(
     db.commit()
     db.refresh(db_post)
 
-    return db_post
+    
+    # Convert SQLAlchemy model instance to Pydantic model
+    owner_pydantic = UserOut.from_orm(current_user)
+
+    # Populate the owner field in the response
+    response_post = PostResponse(
+        **sqlalchemy_model_to_dict(db_post),
+        owner=owner_pydantic
+    )
+
+    return response_post
+
 
 
 @router.get("/{id}", response_model=PostResponse)

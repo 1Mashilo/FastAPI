@@ -1,39 +1,41 @@
-from sqlalchemy import Column, Integer, String, Boolean, text, ForeignKey
-from sqlalchemy.sql.sqltypes import TIMESTAMP
+from sqlalchemy import Column, Integer, String, Boolean, text, ForeignKey, TIMESTAMP
 from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
 
+
 class Post(Base):
+    """Model representing a post."""
     __tablename__ = "posts"
 
     id = Column(Integer, primary_key=True, index=True, unique=True)
     title = Column(String, index=True)
     content = Column(String)
-    published = Column(Boolean, server_default='True', nullable=False)
-    created_at = Column(TIMESTAMP(timezone=True),
-                        nullable=False, server_default=text('now()'))
+    published = Column(Boolean, nullable=False, default=True)
+    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
 
     owner_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     owner = relationship("User", back_populates="posts")
 
-    # Relationship with Vote
     votes = relationship("Vote", back_populates="post")
 
 
 class User(Base):
+    """Model representing a user."""
     __tablename__ = "users"
+
     id = Column(Integer, primary_key=True, nullable=False, index=True)
     email = Column(String, nullable=False, unique=True)
-    password= Column(String, nullable=False)
-    created_at = Column(TIMESTAMP(timezone=True),
-                        nullable=False, server_default=text('now()'))
+    password = Column(String, nullable=False)
+    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
 
     posts = relationship("Post", back_populates="owner")
 
     votes = relationship("Vote", back_populates="user")
 
+
 class Vote(Base):
+    """Model representing a vote."""
     __tablename__ = "post_votes"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -43,7 +45,6 @@ class Vote(Base):
     user = relationship("User", back_populates="votes")
     post = relationship("Post", back_populates="votes")
 
-    
     vote_direction = Column(Integer, nullable=False)
 
     def __repr__(self):

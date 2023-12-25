@@ -18,7 +18,3 @@ class Settings(BaseSettings):
             f"postgresql://{self.DATABASE_USERNAME}:{quoted_password}@"
             f"{self.DATABASE_HOSTNAME}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
         )
-
-    class Config:
-        env_file = ".env"
-        case_sensitive = True

@@ -2,31 +2,26 @@ from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool, create_engine
 from alembic import context
 from app.models import Base
-from app.config import Settings
+from app.config.dev_config import Settings
 from dotenv import load_dotenv  
 from urllib.parse import quote, urlunparse
 
-# Load the .env file
 load_dotenv()
 
-# Use context.config to get the Alembic Config object
 config = context.config
 
-# Access the configuration settings
 settings = Settings()
 
-# Quote the password using the quote function
-quoted_password = quote(settings.DATABASE_PASSWORD, safe="")  # Existing line
+quoted_password = quote(settings.DATABASE_PASSWORD, safe="") 
 database_url = urlunparse((
     "postgresql+psycopg2",
-    f"postgres:{quoted_password.replace('%', '%%')}@localhost:{settings.DATABASE_PORT}",  # Escape % signs
+    f"postgres:{quoted_password.replace('%', '%%')}@localhost:{settings.DATABASE_PORT}",
     settings.DATABASE_NAME,
     "",
     "",
     "",
 ))
 
-# Set the SQLAlchemy URL using context.set_main_option
 config.set_main_option("sqlalchemy.url", database_url)
 
 # Interpret the config file for Python logging.

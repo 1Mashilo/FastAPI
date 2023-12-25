@@ -12,6 +12,7 @@ router = APIRouter(prefix="/posts", tags=['posts'])
 @router.get("/", response_model=List[PostResponse])
 def get_posts(
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
     limit: int = 10,
     skip: int = 0,
     search: Optional[str] = "",
@@ -69,7 +70,11 @@ def create_post(
 
 
 @router.get("/{id}", response_model=PostResponse)
-def get_post(id: int, db: Session = Depends(get_db)):
+def get_post(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)):
+
     """Endpoint to retrieve a specific post by ID."""
     db_post = db.query(Post).filter(Post.id == id).first()
 
@@ -77,7 +82,14 @@ def get_post(id: int, db: Session = Depends(get_db)):
         raise HTTPException(
               status_code=status.HTTP_404_NOT_FOUND, 
               detail=f"Post with id: {id} was not found")
-    return sqlalchemy_model_to_dict(db_post)
+   
+    owner_pydantic = UserOut.from_orm(db_post.owner)
+    response_post = PostResponse(
+        **sqlalchemy_model_to_dict(db_post),
+        owner=owner_pydantic
+    )
+
+    return response_post
 
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -90,10 +102,14 @@ def delete_post(
     db_post = db.query(Post).filter(Post.id == id).first()
 
     if not db_post:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Post with id: {id} does not exist")
+        raise HTTPException(
+              status_code=status.HTTP_404_NOT_FOUND, 
+              detail=f"Post with id: {id} does not exist")
 
     if db_post.owner_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to perform the requested action")
+        raise HTTPException(
+              status_code=status.HTTP_403_FORBIDDEN,
+              detail="Not authorized to perform the requested action")
 
     db.delete(db_post)
     db.commit()
@@ -112,10 +128,14 @@ def update_post(
     db_post = db.query(Post).filter(Post.id == id).first()
 
     if not db_post:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Post with id: {id} does not exist")
+        raise HTTPException(
+              status_code=status.HTTP_404_NOT_FOUND, 
+              detail=f"Post with id: {id} does not exist")
 
     if db_post.owner_id != current_user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to perform the requested action")
+        raise HTTPException(
+              status_code=status.HTTP_403_FORBIDDEN,
+              detail="Not authorized to perform the requested action")
 
     for key, value in post.dict().items():
         setattr(db_post, key, value)

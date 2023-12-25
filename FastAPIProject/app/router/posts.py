@@ -9,6 +9,7 @@ from app.utils import sqlalchemy_model_to_dict
 
 router = APIRouter(prefix="/posts", tags=['posts'])
 
+
 @router.get("/", response_model=List[PostResponse])
 def get_posts(
     db: Session = Depends(get_db),
@@ -30,7 +31,7 @@ def get_posts(
         query = query.filter(Post.author == author)
 
     posts = query.limit(limit).offset(skip).all()
-      # Convert SQLAlchemy models to Pydantic models
+
     response_posts = []
     for post in posts:
         owner_pydantic = UserOut.from_orm(post.owner)
@@ -41,13 +42,15 @@ def get_posts(
         response_posts.append(response_post)
 
     return response_posts
-    
 
-@router.post("/", status_code=status.HTTP_201_CREATED, response_model=PostResponse)
+
+@router.post("/",
+            status_code=status.HTTP_201_CREATED,
+            response_model=PostResponse)
 def create_post(
-    post: PostCreate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+                post: PostCreate,
+                db: Session = Depends(get_db),
+                current_user: User = Depends(get_current_user)
 ):
     """Endpoint to create a new post."""
     db_post = Post(**post.dict(), owner_id=current_user.id)
@@ -71,9 +74,9 @@ def create_post(
 
 @router.get("/{id}", response_model=PostResponse)
 def get_post(
-    id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)):
+             id: int,
+             db: Session = Depends(get_db),
+             current_user: User = Depends(get_current_user)):
 
     """Endpoint to retrieve a specific post by ID."""
     db_post = db.query(Post).filter(Post.id == id).first()
